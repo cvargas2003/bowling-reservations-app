@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.cesar.bowlingreservations"
-    compileSdk = 34   // ⚠️ 36 puede darte problemas
+    compileSdk = 36   // ⚠️ 36 puede darte problemas
 
     defaultConfig {
         applicationId = "com.cesar.bowlingreservations"
@@ -64,11 +64,12 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     // 🔥 ROOM (BASE DE DATOS)
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 }
 
 // 🔥 IMPORTANTE (faltaba esto)
