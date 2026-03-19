@@ -1,11 +1,16 @@
 package com.cesar.bowlingreservations.uii
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavController
 import com.cesar.bowlingreservations.data.model.Reservation
 import com.cesar.bowlingreservations.viewmodel.ReservationViewModel
@@ -13,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun AddReservationScreen(
     navController: NavController,
     viewModel: ReservationViewModel,
@@ -31,7 +37,7 @@ fun AddReservationScreen(
     val message by viewModel.message.collectAsState()
 
     // 🔥 CARGAR DATOS SI ES EDICIÓN
-    LaunchedEffect(reservationId) {
+    LaunchedEffect(reservationId, reservations) {
         if (reservationId != 0) {
             val res = reservations.find { it.id == reservationId }
             res?.let {
@@ -46,9 +52,12 @@ fun AddReservationScreen(
         }
     }
 
-    // 📅 PICKERS
+    // 📅 y ⏰ estados
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    val dateState = rememberDatePickerState()
+    val timeState = rememberTimePickerState()
 
     Column(
         modifier = Modifier
@@ -71,72 +80,102 @@ fun AddReservationScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(name, { name = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(phone, { phone = it }, label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Teléfono") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // 📅 FECHA
-                Button(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (date.isEmpty()) "Seleccionar Fecha" else date)
+                Button(
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (date.isEmpty()) "Seleccionar Fecha" else "📅 $date")
                 }
 
                 if (showDatePicker) {
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
                         confirmButton = {
-                            TextButton(onClick = { showDatePicker = false }) {
+                            TextButton(onClick = {
+                                dateState.selectedDateMillis?.let {
+                                    date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                        .format(Date(it))
+                                }
+                                showDatePicker = false
+                            }) {
                                 Text("OK")
                             }
                         }
                     ) {
-                        val state = rememberDatePickerState()
-                        DatePicker(state = state)
-
-                        LaunchedEffect(state.selectedDateMillis) {
-                            state.selectedDateMillis?.let {
-                                date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                                    .format(Date(it))
-                            }
-                        }
+                        DatePicker(state = dateState)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // ⏰ HORA
-                Button(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (time.isEmpty()) "Seleccionar Hora" else time)
+                Button(
+                    onClick = { showTimePicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (time.isEmpty()) "Seleccionar Hora" else "⏰ $time")
                 }
 
                 if (showTimePicker) {
-                    val state = rememberTimePickerState()
-
                     AlertDialog(
                         onDismissRequest = { showTimePicker = false },
                         confirmButton = {
                             TextButton(onClick = {
-                                time = "${state.hour}:${state.minute}"
+                                val hour = timeState.hour.toString().padStart(2, '0')
+                                val minute = timeState.minute.toString().padStart(2, '0')
+                                time = "$hour:$minute"
                                 showTimePicker = false
                             }) {
                                 Text("OK")
                             }
                         },
                         text = {
-                            TimePicker(state = state)
+                            TimePicker(state = timeState)
                         }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedTextField(lane, { lane = it }, label = { Text("Pista") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(players, { players = it }, label = { Text("Jugadores") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = lane,
+                    onValueChange = { lane = it },
+                    label = { Text("Pista") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = players,
+                    onValueChange = { players = it },
+                    label = { Text("Jugadores") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = {
+
+                        if (name.isEmpty() || date.isEmpty() || time.isEmpty()) {
+                            return@Button
+                        }
 
                         val reservation = Reservation(
                             id = if (reservationId == 0) 0 else reservationId,
